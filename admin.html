@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>后台管理系统</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .user-card { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .user-card.approved { border-left: 4px solid #07c160; }
+        .user-card.pending { border-left: 4px solid #ffba00; }
+        button { 
+            padding: 5px 10px; 
+            margin: 0 5px; 
+            cursor: pointer; 
+        }
+        .approve-btn { background: #07c160; color: white; border: none; }
+        .reject-btn { background: #ff4757; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h1>用户审核管理</h1>
+    <div id="userList"></div>
+
+    <script>
+        // 获取用户列表
+        async function loadUsers() {
+            try {
+                const response = await fetch('http://localhost:3001/customers');
+                const users = await response.json();
+                
+                displayUsers(users);
+            } catch (error) {
+                console.error('加载用户失败:', error);
+            }
+        }
+        
+        // 显示用户列表
+        function displayUsers(users) {
+            const userListEl = document.getElementById('userList');
+            
+            userListEl.innerHTML = users.map(user => `
+                <div class="user-card ${user.status === 1 ? 'approved' : 'pending'}">
+                    <h3>${user.name} - ${user.phone}</h3>
+                    <p>公司：${user.company || '未填写'} | 职位：${user.position || '未填写'}</p>
+                    <p>状态：${getStatusText(user.status)}</p>
+                    <p>提交时间：${new Date(user.created_at).toLocaleString()}</p>
+                    ${user.status === 0 ? `
+                        <button class="approve-btn" onclick="approveUser(${user.id})">审核通过</button>
+                        <button class="reject-btn" onclick="rejectUser(${user.id})">审核拒绝</button>
+                    ` : ''}
+                    ${user.seat_number ? `<p><strong>座位号：${user.seat_number}</strong></p>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        // 审核通过
+        async function approveUser(userId) {
+            const seatNumber = prompt('请输入座位号：');
+            if (!seatNumber) return;
+            
+            try {
+                await fetch(`http://localhost:3001/customers/${userId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 1,
+                        seat_number: seatNumber
+                    })
+                });
+                
+                alert('审核完成！');
+                loadUsers(); // 重新加载列表
+            } catch (error) {
+                alert('操作失败：' + error.message);
+            }
+        }
+        
+        // 审核拒绝
+        async function rejectUser(userId) {
+            try {
+                await fetch(`http://localhost:3001/customers/${userId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 2
+                    })
+                });
+                
+                alert('已拒绝该用户');
+                loadUsers();
+            } catch (error) {
+                alert('操作失败：' + error.message);
+            }
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                0: '待审核',
+                1: '审核通过',
+                2: '审核拒绝'
+            };
+            return statusMap[status] || '未知状态';
+        }
+        
+        // 页面加载时获取用户列表
+        loadUsers();
+    </script>
+</body>
+</html>
