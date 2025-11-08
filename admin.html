@@ -26,89 +26,124 @@
     <h1>用户审核管理</h1>
     <div id="userList"></div>
 
-    <script>
-        // 获取用户列表
-        async function loadUsers() {
-            try {
-                const response = await fetch('http://localhost:3001/customers');
-                const users = await response.json();
-                
-                displayUsers(users);
-            } catch (error) {
-                console.error('加载用户失败:', error);
-            }
-        }
-        
-        // 显示用户列表
-        function displayUsers(users) {
-            const userListEl = document.getElementById('userList');
+<script>
+    // 获取用户列表
+    async function loadUsers() {
+        try {
+            const SUPABASE_URL = 'https://wqrfmwakqkuiutiezngc.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxcmZtd2FrcWt1aXV0aWV6bmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTE4MzUsImV4cCI6MjA3ODA4NzgzNX0.LClSKDW1C9tf9MEq8nKyYLnSR69-f6XHvlwhOX7LSAg';
             
-            userListEl.innerHTML = users.map(user => `
-                <div class="user-card ${user.status === 1 ? 'approved' : 'pending'}">
-                    <h3>${user.name} - ${user.phone}</h3>
-                    <p>公司：${user.company || '未填写'} | 职位：${user.position || '未填写'}</p>
-                    <p>状态：${getStatusText(user.status)}</p>
-                    <p>提交时间：${new Date(user.created_at).toLocaleString()}</p>
-                    ${user.status === 0 ? `
-                        <button class="approve-btn" onclick="approveUser(${user.id})">审核通过</button>
-                        <button class="reject-btn" onclick="rejectUser(${user.id})">审核拒绝</button>
-                    ` : ''}
-                    ${user.seat_number ? `<p><strong>座位号：${user.seat_number}</strong></p>` : ''}
-                </div>
-            `).join('');
-        }
-        
-        // 审核通过
-        async function approveUser(userId) {
-            const seatNumber = prompt('请输入座位号：');
-            if (!seatNumber) return;
             
-            try {
-                await fetch(`http://localhost:3001/customers/${userId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        status: 1,
-                        seat_number: seatNumber
-                    })
-                });
-                
-                alert('审核完成！');
-                loadUsers(); // 重新加载列表
-            } catch (error) {
-                alert('操作失败：' + error.message);
-            }
+            const response = await fetch(SUPABASE_URL + '/rest/v1/customers?select=*&order=created_at.desc', {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                }
+            });
+            const users = await response.json();
+            displayUsers(users);
+        } catch (error) {
+            console.error('加载用户失败:', error);
+            alert('加载用户失败：' + error.message);
         }
+    }
+    
+    // 显示用户列表
+    function displayUsers(users) {
+        const userListEl = document.getElementById('userList');
         
-        // 审核拒绝
-        async function rejectUser(userId) {
-            try {
-                await fetch(`http://localhost:3001/customers/${userId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        status: 2
-                    })
-                });
-                
-                alert('已拒绝该用户');
-                loadUsers();
-            } catch (error) {
-                alert('操作失败：' + error.message);
-            }
+        userListEl.innerHTML = users.map(user => `
+            <div class="user-card ${user.status === 1 ? 'approved' : 'pending'}">
+                <h3>${user.name} - ${user.phone}</h3>
+                <p>公司：${user.company || '未填写'} | 职位：${user.position || '未填写'}</p>
+                <p>状态：${getStatusText(user.status)}</p>
+                <p>提交时间：${new Date(user.created_at).toLocaleString()}</p>
+                ${user.status === 0 ? `
+                    <button class="approve-btn" onclick="approveUser(${user.id})">审核通过</button>
+                    <button class="reject-btn" onclick="rejectUser(${user.id})">审核拒绝</button>
+                ` : ''}
+                ${user.seat_number ? `<p><strong>座位号：${user.seat_number}</strong></p>` : ''}
+            </div>
+        `).join('');
+    }
+    
+    // 审核通过
+    async function approveUser(userId) {
+        const seatNumber = prompt('请输入座位号：');
+        if (!seatNumber) return;
+        
+        try {
+            const SUPABASE_URL = 'https://wqrfmwakqkuiutiezngc.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxcmZtd2FrcWt1aXV0aWV6bmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTE4MzUsImV4cCI6MjA3ODA4NzgzNX0.LClSKDW1C9tf9MEq8nKyYLnSR69-f6XHvlwhOX7LSAg';
+            
+            await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + userId, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    status: 1,
+                    seat_number: seatNumber
+                })
+            });
+            
+            alert('审核完成！');
+            loadUsers(); // 重新加载列表
+        } catch (error) {
+            alert('操作失败：' + error.message);
         }
-        
-        function getStatusText(status) {
-            const statusMap = {
-                0: '待审核',
-                1: '审核通过',
-                2: '审核拒绝'
-            };
-            return statusMap[status] || '未知状态';
+    }
+    
+    // 审核拒绝
+    async function rejectUser(userId) {
+        try {
+            const SUPABASE_URL = 'https://wqrfmwakqkuiutiezngc.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxcmZtd2FrcWt1aXV0aWV6bmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTE4MzUsImV4cCI6MjA3ODA4NzgzNX0.LClSKDW1C9tf9MEq8nKyYLnSR69-f6XHvlwhOX7LSAg';
+            
+            await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + userId, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    status: 2
+                })
+            });
+            
+            alert('已拒绝该用户');
+            loadUsers();
+        } catch (error) {
+            alert('操作失败：' + error.message);
         }
-        
-        // 页面加载时获取用户列表
-        loadUsers();
-    </script>
+    }
+    
+    function getStatusText(status) {
+        const statusMap = {
+            0: '待审核',
+            1: '审核通过',
+            2: '审核拒绝'
+        };
+        return statusMap[status] || '未知状态';
+    }
+    
+    // 页面加载时获取用户列表
+    loadUsers();
+    
+    // 添加刷新按钮功能（可选）
+    document.addEventListener('DOMContentLoaded', function() {
+        // 可以添加一个刷新按钮
+        const refreshBtn = document.createElement('button');
+        refreshBtn.textContent = '刷新列表';
+        refreshBtn.style.cssText = 'padding: 10px 20px; margin: 10px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer;';
+        refreshBtn.onclick = loadUsers;
+        document.body.insertBefore(refreshBtn, document.getElementById('userList'));
+    });
+</script>
 </body>
 </html>
